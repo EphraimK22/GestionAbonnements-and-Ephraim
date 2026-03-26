@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Assistant IA de recommandation d'abonnements">
+    <title>Assistant Recommandation IA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --glass: rgba(255, 255, 255, 0.12);
+            --glass-strong: rgba(255, 255, 255, 0.2);
+            --border: rgba(255, 255, 255, 0.2);
+            --text-main: #ffffff;
+            --text-soft: rgba(255, 255, 255, 0.78);
+            --panel-text: #1f2937;
+            --bg: radial-gradient(circle at top left, rgba(255, 255, 255, 0.15), transparent 30%),
+                  radial-gradient(circle at bottom right, rgba(240, 147, 251, 0.18), transparent 35%),
+                  linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --shadow: 0 25px 50px rgba(15, 23, 42, 0.22);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            background: var(--bg);
+            background-attachment: fixed;
+        }
+
+        .page-shell {
+            min-height: 100vh;
+            padding: 32px 16px;
+        }
+
+        .hero-card,
+        .chat-shell,
+        .summary-card {
+            background: var(--glass);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .hero-card {
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--text-main);
+            font-weight: 700;
+            margin-bottom: 18px;
+        }
+
+        .hero-title {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 800;
+            line-height: 1.05;
+            margin-bottom: 12px;
+        }
+
+        .hero-title span {
+            color: #ffd166;
+        }
+
+        .hero-copy {
+            max-width: 720px;
+            color: var(--text-soft);
+            font-size: 1.05rem;
+            margin-bottom: 0;
+        }
+
+        .chat-shell {
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 22px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .chat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.08));
+            font-size: 1.5rem;
+        }
+
+        .chat-header h1 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .chat-header p {
+            margin: 0;
+            color: var(--text-soft);
+            font-size: 0.92rem;
+        }
+
+        .status-pill {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, 0.16);
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .chat-layout {
+            display: grid;
+            grid-template-columns: 1.7fr 1fr;
+            gap: 0;
+        }
+
+        .conversation-panel {
+            min-height: 620px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        .messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            font-size: 1.1rem;
+        }
+
+        .message.bot .message-avatar {
+            background: linear-gradient(135deg, #ffd166, #f59e0b);
+            color: #1f2937;
+        }
+
+        .message.user .message-avatar {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .message-bubble {
+            max-width: min(78%, 640px);
+            padding: 16px 18px;
+            border-radius: 20px;
+            line-height: 1.55;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+            white-space: pre-wrap;
+        }
+
+        .message.bot .message-bubble {
+            background: #ffffff;
+            color: var(--panel-text);
+            border-top-left-radius: 8px;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            color: #ffffff;
+            border-top-right-radius: 8px;
+        }
+
+        .typing {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-soft);
+            font-size: 0.92rem;
+        }
+
+        .typing.active {
+            display: flex;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ffffff;
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .input-panel {
+            padding: 22px 24px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        .quick-prompts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .quick-prompt {
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .quick-prompt:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .composer {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+        }
+
+        .composer textarea {
+            min-height: 110px;
+            resize: vertical;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 16px 18px;
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            outline: none;
+        }
+
+        .composer textarea::placeholder {
+            color: rgba(255, 255, 255, 0.62);
+        }
+
+        .composer textarea:focus {
+            border-color: rgba(255, 255, 255, 0.45);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
+        }
+
+        .send-button {
+            align-self: end;
+            border: 0;
+            border-radius: 18px;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #ffd166, #f59e0b);
+            color: #1f2937;
+            font-weight: 800;
+            min-width: 140px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(245, 158, 11, 0.28);
+        }
+
+        .send-button:disabled {
+            opacity: 0.65;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .summary-panel {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .summary-card {
+            padding: 18px;
+            border-radius: 22px;
+            box-shadow: none;
+        }
+
+        .summary-card h2 {
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .summary-empty {
+            color: var(--text-soft);
+            margin: 0;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .metric-box {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 14px;
+        }
+
+        .metric-label {
+            display: block;
+            color: var(--text-soft);
+            font-size: 0.82rem;
+            margin-bottom: 6px;
+        }
+
+        .metric-value {
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .suggestions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .suggestion-item {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 16px;
+        }
+
+        .suggestion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .suggestion-title {
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .suggestion-domain {
+            display: inline-block;
+            margin-top: 4px;
+            color: var(--text-soft);
+            font-size: 0.88rem;
+        }
+
+        .utility-pill {
+            flex-shrink: 0;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .utility-high {
+            background: rgba(16, 185, 129, 0.18);
+            color: #bbf7d0;
+        }
+
+        .utility-medium {
+            background: rgba(245, 158, 11, 0.18);
+            color: #fde68a;
+        }
+
+        .utility-low {
+            background: rgba(239, 68, 68, 0.18);
+            color: #fecaca;
+        }
+
+        .suggestion-reason {
+            margin: 0;
+            color: var(--text-soft);
+            font-size: 0.92rem;
+        }
+
+        .error-banner {
+            display: none;
+            margin-top: 14px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(239, 68, 68, 0.18);
+            border: 1px solid rgba(239, 68, 68, 0.28);
+            color: #fee2e2;
+            font-weight: 600;
+        }
+
+        .error-banner.active {
+            display: block;
+        }
+
+        @media (max-width: 991px) {
+            .chat-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .conversation-panel {
+                border-right: 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-shell {
+                padding: 18px 12px;
+            }
+
+            .hero-card,
+            .chat-header,
+            .messages,
+            .input-panel,
+            .summary-panel {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .composer {
+                grid-template-columns: 1fr;
+            }
+
+            .send-button {
+                width: 100%;
+            }
+
+            .message-bubble {
+                max-width: 88%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page-shell">
+    <div class="container-xl">
+        <section class="hero-card">
+            <div class="hero-badge">
+                <i class="bi bi-stars"></i>
+                Feature IA de `student40006741`
+            </div>
+            <h1 class="hero-title">Assistant de <span>recommandation</span> d'abonnements</h1>
+            <p class="hero-copy">
+                Décris librement ce que tu aimes, ce dont tu as besoin ou le type d'usage que tu recherches.
+                L'IA analyse ton texte, puis le backend propose des abonnements cohérents avec ton profil.
+            </p>
+        </section>
+
+        <section class="chat-shell">
+            <div class="chat-header">
+                <div class="chat-header-title">
+                    <div class="chat-icon">
+                        <i class="bi bi-chat-dots-fill"></i>
+                    </div>
+                    <div>
+                        <h1>Conversation avec l'assistant IA</h1>
+                        <p>Connecté au backend `POST /api/recommendations`</p>
+                    </div>
+                </div>
+                <div class="status-pill">
+                    <i class="bi bi-circle-fill me-2"></i>Prêt
+                </div>
+            </div>
+
+            <div class="chat-layout">
+                <div class="conversation-panel">
+                    <div class="messages" id="messages">
+                        <div class="message bot">
+                            <div class="message-avatar">
+                                <i class="bi bi-robot"></i>
+                            </div>
+                            <div class="message-bubble">
+                                Bonjour. Explique-moi simplement tes centres d'intérêt, tes habitudes ou ce que tu recherches, et je te proposerai des abonnements adaptés.
+                            </div>
+                        </div>
+                        <div class="typing" id="typingIndicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <span>L'assistant analyse ta demande...</span>
+                        </div>
+                    </div>
+
+                    <div class="input-panel">
+                        <div class="quick-prompts">
+                            <button class="quick-prompt" type="button" data-prompt="J'aime écouter de la musique tous les jours et découvrir de nouveaux albums.">Musique au quotidien</button>
+                            <button class="quick-prompt" type="button" data-prompt="Je regarde beaucoup de films et de séries le soir après le travail.">Films et séries</button>
+                            <button class="quick-prompt" type="button" data-prompt="Je veux apprendre l'anglais et l'espagnol avec une application simple.">Apprendre les langues</button>
+                        </div>
+
+                        <div class="composer">
+                            <textarea id="userInput" placeholder="Exemple : J'aime écouter de la musique, regarder des films et apprendre des langues."></textarea>
+                            <button class="send-button" id="sendButton" type="button">
+                                <i class="bi bi-send-fill me-2"></i>Envoyer
+                            </button>
+                        </div>
+
+                        <div class="error-banner" id="errorBanner"></div>
+                    </div>
+                </div>
+
+                <aside class="summary-panel">
+                    <div class="summary-card">
+                        <h2>Analyse en direct</h2>
+                        <div class="metric-grid">
+                            <div class="metric-box">
+                                <span class="metric-label">Besoin principal</span>
+                                <span class="metric-value" id="mainNeedValue">En attente</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="metric-label">Niveau</span>
+                                <span class="metric-value" id="needLevelValue">En attente</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="metric-label">Domaine principal</span>
+                                <span class="metric-value" id="topDomainValue">En attente</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="metric-label">Confiance</span>
+                                <span class="metric-value" id="confidenceValue">En attente</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <h2>Suggestions proposées</h2>
+                        <div class="suggestions-list" id="suggestionsList">
+                            <p class="summary-empty">Les recommandations apparaîtront ici après la première analyse.</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+    const messages = document.getElementById('messages');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+    const errorBanner = document.getElementById('errorBanner');
+
+    const mainNeedValue = document.getElementById('mainNeedValue');
+    const needLevelValue = document.getElementById('needLevelValue');
+    const topDomainValue = document.getElementById('topDomainValue');
+    const confidenceValue = document.getElementById('confidenceValue');
+    const suggestionsList = document.getElementById('suggestionsList');
+
+    function addMessage(role, content) {
+        const wrapper = document.createElement('div');
+        wrapper.className = `message ${role}`;
+        wrapper.innerHTML = `
+            <div class="message-avatar">
+                <i class="bi bi-${role === 'bot' ? 'robot' : 'person-fill'}"></i>
+            </div>
+            <div class="message-bubble">${escapeHtml(content)}</div>
+        `;
+
+        messages.insertBefore(wrapper, typingIndicator);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function setLoading(isLoading) {
+        sendButton.disabled = isLoading;
+        typingIndicator.classList.toggle('active', isLoading);
+        if (isLoading) {
+            messages.scrollTop = messages.scrollHeight;
+        }
+    }
+
+    function showError(message) {
+        errorBanner.textContent = message;
+        errorBanner.classList.add('active');
+    }
+
+    function clearError() {
+        errorBanner.textContent = '';
+        errorBanner.classList.remove('active');
+    }
+
+    function updateSummary(data) {
+        mainNeedValue.textContent = data.mainNeed || 'Non défini';
+        needLevelValue.textContent = data.needLevel || 'Non défini';
+        topDomainValue.textContent = data.topDomain || 'Non défini';
+        confidenceValue.textContent = typeof data.confidence === 'number'
+            ? `${Math.round(data.confidence * 100)}%`
+            : 'Non défini';
+
+        if (!Array.isArray(data.suggestions) || data.suggestions.length === 0) {
+            suggestionsList.innerHTML = '<p class="summary-empty">Aucune suggestion disponible pour cette analyse.</p>';
+            return;
+        }
+
+        suggestionsList.innerHTML = data.suggestions.map((suggestion) => `
+            <article class="suggestion-item">
+                <div class="suggestion-header">
+                    <div>
+                        <p class="suggestion-title">${escapeHtml(suggestion.title || 'Suggestion')}</p>
+                        <span class="suggestion-domain">${escapeHtml(suggestion.domain || 'other')}</span>
+                    </div>
+                    <span class="utility-pill utility-${escapeHtml((suggestion.utilityLevel || 'medium').toLowerCase())}">
+                        ${escapeHtml(suggestion.utilityLevel || 'medium')}
+                    </span>
+                </div>
+                <p class="suggestion-reason">${escapeHtml(suggestion.reasonText || 'Aucune raison fournie.')}</p>
+            </article>
+        `).join('');
+    }
+
+    function buildBotMessage(data) {
+        const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+        const topSuggestions = suggestions.slice(0, 3).map((item) => item.title).join(', ');
+        const confidenceText = typeof data.confidence === 'number'
+            ? `${Math.round(data.confidence * 100)}%`
+            : 'non précisée';
+
+        let lines = [
+            `Besoin principal : ${data.mainNeed || 'non défini'}`,
+            `Niveau : ${data.needLevel || 'non défini'}`,
+            `Domaine dominant : ${data.topDomain || 'non défini'}`,
+            `Confiance : ${confidenceText}`
+        ];
+
+        if (topSuggestions) {
+            lines.push(`Suggestions : ${topSuggestions}`);
+        }
+
+        return lines.join('\n');
+    }
+
+    async function sendRecommendation() {
+        const text = userInput.value.trim();
+        if (!text) {
+            showError('Merci de saisir un texte avant d’envoyer la demande.');
+            return;
+        }
+
+        clearError();
+        addMessage('user', text);
+        userInput.value = '';
+        setLoading(true);
+
+        try {
+            const response = await fetch('/api/recommendations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text })
+            });
+
+            const payload = await response.json();
+
+            if (!response.ok) {
+                throw new Error(payload.error || 'Le backend a renvoyé une erreur.');
+            }
+
+            updateSummary(payload);
+            addMessage('bot', buildBotMessage(payload));
+        } catch (error) {
+            showError(error.message || 'Impossible de contacter l’assistant.');
+            addMessage('bot', 'Je n’ai pas pu traiter la demande pour le moment. Vérifie que le backend est lancé et que l’API est configurée.');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
+
+    sendButton.addEventListener('click', sendRecommendation);
+
+    userInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendRecommendation();
+        }
+    });
+
+    document.querySelectorAll('[data-prompt]').forEach((button) => {
+        button.addEventListener('click', () => {
+            userInput.value = button.dataset.prompt;
+            userInput.focus();
+        });
+    });
+</script>
+</body>
+</html>
