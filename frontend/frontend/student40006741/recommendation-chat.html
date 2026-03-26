@@ -600,6 +600,7 @@
 </div>
 
 <script>
+    const API_BASE_URL = 'http://localhost:4567';
     const messages = document.getElementById('messages');
     const typingIndicator = document.getElementById('typingIndicator');
     const userInput = document.getElementById('userInput');
@@ -707,7 +708,7 @@
         setLoading(true);
 
         try {
-            const response = await fetch('/api/recommendations', {
+            const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
