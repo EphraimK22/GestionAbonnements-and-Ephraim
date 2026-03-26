@@ -676,23 +676,25 @@
 
     function buildBotMessage(data) {
         const suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
-        const topSuggestions = suggestions.slice(0, 3).map((item) => item.title).join(', ');
+        const mainNeed = data.mainNeed || 'un besoin non défini';
+        const topDomain = data.topDomain || 'other';
         const confidenceText = typeof data.confidence === 'number'
             ? `${Math.round(data.confidence * 100)}%`
             : 'non précisée';
 
-        let lines = [
-            `Besoin principal : ${data.mainNeed || 'non défini'}`,
-            `Niveau : ${data.needLevel || 'non défini'}`,
-            `Domaine dominant : ${data.topDomain || 'non défini'}`,
-            `Confiance : ${confidenceText}`
-        ];
-
-        if (topSuggestions) {
-            lines.push(`Suggestions : ${topSuggestions}`);
+        if (suggestions.length === 0) {
+            return `J'ai analysé ta demande. Ton besoin principal semble être "${mainNeed}", avec un domaine dominant "${topDomain}". Je n'ai pas encore de suggestion d'abonnement adaptée dans mon catalogue pour ce cas précis.`;
         }
 
-        return lines.join('\n');
+        const topSuggestions = suggestions.slice(0, 2).map((item) => item.title);
+        const intro = `J'ai analysé ta demande : ton besoin principal semble être "${mainNeed}".`;
+        const domainLine = `Le domaine qui ressort le plus est "${topDomain}", avec un niveau de confiance d'environ ${confidenceText}.`;
+
+        if (topSuggestions.length === 1) {
+            return `${intro} ${domainLine} Je te proposerais de regarder du côté de ${topSuggestions[0]}, car cela semble le plus cohérent avec ce que tu recherches.`;
+        }
+
+        return `${intro} ${domainLine} Je te proposerais en priorité ${topSuggestions[0]} et ${topSuggestions[1]}, car ce sont les suggestions les plus cohérentes avec ton besoin actuel. Tu peux aussi regarder le panneau de droite pour voir le détail des recommandations.`;
     }
 
     async function sendRecommendation() {
