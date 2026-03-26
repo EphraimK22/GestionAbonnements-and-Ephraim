@@ -118,6 +118,25 @@ LOG_LEVEL=INFO
 
 If these keys are missing or invalid, the application automatically falls back to local mode for Mailgun/Okta/Stripe.
 
+### OpenAI - Feature Recommendation (`student40006741`)
+
+La feature de recommandation d'abonnements utilise l'API OpenAI côté backend uniquement.
+
+Variables attendues :
+
+```env
+OPENAI_API_KEY=sk-your-openai-api-key
+OPENAI_MODEL=gpt-5.1
+OPENAI_BASE_URL=https://api.openai.com/v1/chat/completions
+```
+
+Un exemple prêt à copier existe dans [backend/.env.example](./backend/.env.example).
+
+Important :
+- ne jamais exposer `OPENAI_API_KEY` dans le frontend
+- la clé doit rester côté serveur
+- la route backend utilisée est `POST /api/recommendations`
+
 ## 🔄 Pipeline CI/CD
 
 ### GitHub Actions
@@ -169,6 +188,14 @@ java -jar target/gestion-abonnements-1.0-SNAPSHOT.jar help
 - ✅ Audit trail complet (IMPORT, UPDATE, DELETE, EXPORT)
 - ✅ Quotas configurables (imports/mois, storage, max users)
 - ✅ Intégration Open Banking (PARTIE 3 appliquée par sous-compte)
+
+### PARTIE 5 : Feature `student40006741` - Recommandation IA OpenAI
+- ✅ Route backend `POST /api/recommendations`
+- ✅ Analyse d'un texte libre utilisateur via OpenAI
+- ✅ Réponse structurée JSON parsée côté backend
+- ✅ Mapping local de domaines vers suggestions d'abonnements
+- ✅ Implémentation stateless sans base de données ni persistance
+- ✅ Page de démo HTML dédiée dans `student40006741/frontend`
 
 ### Infrastructure & Qualité
 - ✅ 28 tests integration + unit (100% pass rate)

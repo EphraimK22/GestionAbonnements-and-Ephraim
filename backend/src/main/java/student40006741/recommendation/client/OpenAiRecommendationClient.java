@@ -67,28 +67,87 @@ public class OpenAiRecommendationClient implements RecommendationAiClient {
         root.put("model", model);
 
         ObjectNode responseFormat = objectMapper.createObjectNode();
-        responseFormat.put("type", "json_object");
+        responseFormat.put("type", "json_schema");
+        ObjectNode jsonSchema = objectMapper.createObjectNode();
+        jsonSchema.put("name", "subscription_recommendation");
+        jsonSchema.put("strict", true);
+
+        ObjectNode schema = objectMapper.createObjectNode();
+        schema.put("type", "object");
+
+        ObjectNode properties = objectMapper.createObjectNode();
+        properties.set("mainNeed", stringSchema());
+        properties.set("needLevel", enumSchema("low", "medium", "high"));
+        properties.set("topDomain", enumSchema(
+                "music",
+                "video",
+                "language_learning",
+                "books",
+                "news",
+                "other"
+        ));
+        properties.set("confidence", numberSchema());
+
+        ObjectNode interestsSchema = objectMapper.createObjectNode();
+        interestsSchema.put("type", "array");
+        interestsSchema.set("items", stringSchema());
+        properties.set("interests", interestsSchema);
+
+        ObjectNode recommendedTypeSchema = objectMapper.createObjectNode();
+        recommendedTypeSchema.put("type", "object");
+        ObjectNode recommendedTypeProperties = objectMapper.createObjectNode();
+        recommendedTypeProperties.set("domain", enumSchema(
+                "music",
+                "video",
+                "language_learning",
+                "books",
+                "news",
+                "other"
+        ));
+        recommendedTypeProperties.set("utilityLevel", enumSchema("low", "medium", "high"));
+        recommendedTypeProperties.set("reason", stringSchema());
+        recommendedTypeSchema.set("properties", recommendedTypeProperties);
+        recommendedTypeSchema.set("required", arrayOf("domain", "utilityLevel", "reason"));
+        recommendedTypeSchema.put("additionalProperties", false);
+
+        ObjectNode recommendedTypesSchema = objectMapper.createObjectNode();
+        recommendedTypesSchema.put("type", "array");
+        recommendedTypesSchema.set("items", recommendedTypeSchema);
+        properties.set("recommendedTypes", recommendedTypesSchema);
+
+        schema.set("properties", properties);
+        schema.set("required", arrayOf(
+                "mainNeed",
+                "needLevel",
+                "topDomain",
+                "confidence",
+                "interests",
+                "recommendedTypes"
+        ));
+        schema.put("additionalProperties", false);
+
+        jsonSchema.set("schema", schema);
+        responseFormat.set("json_schema", jsonSchema);
         root.set("response_format", responseFormat);
 
         ArrayNode messages = objectMapper.createArrayNode();
         messages.add(message("system", """
                 Tu analyses un texte utilisateur pour recommander des types d'abonnements.
-                Réponds uniquement avec un JSON valide.
-                Structure exacte attendue:
-                {
-                  "mainNeed": "string",
-                  "needLevel": "low|medium|high",
-                  "topDomain": "string",
-                  "confidence": 0.0,
-                  "interests": ["string"],
-                  "recommendedTypes": [
-                    {
-                      "domain": "string",
-                      "utilityLevel": "low|medium|high",
-                      "reason": "string"
-                    }
-                  ]
-                }
+                Réponds uniquement avec un JSON strictement conforme au schema fourni.
+
+                Regles obligatoires :
+                - Ecris tout le JSON en anglais pour les cles et les valeurs enumerees.
+                - N'utilise jamais de domaines en francais comme "musique", "films", "culture", "apprentissage".
+                - Tu dois choisir uniquement parmi ces domaines exacts : music, video, language_learning, books, news, other.
+                - topDomain doit etre l'un de ces domaines exacts.
+                - Chaque objet de recommendedTypes doit utiliser l'un de ces domaines exacts.
+                - needLevel et utilityLevel doivent etre uniquement low, medium ou high.
+                - confidence doit etre un nombre entre 0.0 et 1.0.
+                - mainNeed peut etre en francais si utile, mais les enums doivent rester exactement celles imposees.
+                - Si le texte parle surtout de musique, choisis music.
+                - Si le texte parle de films, series, streaming video ou cinema, choisis video.
+                - Si le texte parle d'apprentissage de langues, choisis language_learning.
+                - Si aucun domaine ne correspond clairement, choisis other.
                 """));
         messages.add(message("user", "Texte utilisateur: " + text));
         root.set("messages", messages);
@@ -100,6 +159,33 @@ public class OpenAiRecommendationClient implements RecommendationAiClient {
         node.put("role", role);
         node.put("content", content);
         return node;
+    }
+
+    private ObjectNode stringSchema() {
+        ObjectNode schema = objectMapper.createObjectNode();
+        schema.put("type", "string");
+        return schema;
+    }
+
+    private ObjectNode numberSchema() {
+        ObjectNode schema = objectMapper.createObjectNode();
+        schema.put("type", "number");
+        return schema;
+    }
+
+    private ObjectNode enumSchema(String... values) {
+        ObjectNode schema = objectMapper.createObjectNode();
+        schema.put("type", "string");
+        schema.set("enum", arrayOf(values));
+        return schema;
+    }
+
+    private ArrayNode arrayOf(String... values) {
+        ArrayNode array = objectMapper.createArrayNode();
+        for (String value : values) {
+            array.add(value);
+        }
+        return array;
     }
 
     private String extractContent(JsonNode root) {
@@ -135,7 +221,7 @@ public class OpenAiRecommendationClient implements RecommendationAiClient {
         }
 
         if ("openai.model".equals(propertyName)) {
-            return "gpt-4o-mini";
+            return "gpt-5.1";
         }
         if ("openai.base.url".equals(propertyName)) {
             return "https://api.openai.com/v1/chat/completions";
