@@ -186,6 +186,7 @@ java -jar target/gestion-abonnements-1.0-SNAPSHOT.jar help
 - ✅ Mapping local de domaines vers suggestions d'abonnements
 - ✅ Implémentation stateless sans base de données ni persistance
 - ✅ Page de démo HTML dédiée dans `student40006741/frontend`
+- lien vidéo youtube : https://youtu.be/oaCsw80Oacg?si=NKC-XKuu8-Yxlhom
 
 ### Infrastructure & Qualité
 - ✅ 28 tests integration + unit (100% pass rate)
