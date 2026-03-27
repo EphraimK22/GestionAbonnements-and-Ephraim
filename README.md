@@ -54,16 +54,6 @@ mvn clean verify -Pdev
 mvn clean package -Pprod -DskipTests
 ```
 
-## 📖 Documentation
-
-| Ressource | Description |
-|-----------|-------------|
-| **[BACKEND_ARCHITECTURE.md](./docs/techniques/ARCHITECTURE_TECHNIQUE.md)** | Architecture clean (6 couches) |
-| **[GUIDE_EXECUTION_JAR.md](./docs/guides/GUIDE_UTILISATION_MAIN.md)** | Guide d'exécution détaillé |
-| **[STRUCTURE_PROJET.md](./STRUCTURE_PROJET.md)** | Arborescence complète |
-| **[tests/README_TESTS.md](./tests/README_TESTS.md)** | Tests et validation |
-| **[AUDIT_ETAT_PROJET.md](./AUDIT_ETAT_PROJET.md)** | État actuel du projet |
-
 ## 🐳 Déploiement Docker
 
 ### Architecture Docker
